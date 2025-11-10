@@ -1,0 +1,29 @@
+# Dockerfile pour le développement du backend NestJS
+
+FROM node:20-alpine
+
+# Installer OpenSSL pour Prisma (nécessaire pour le moteur de requête Prisma)
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Installer les dépendances
+COPY package*.json ./
+RUN npm install
+
+# Copier le script d'entrée et le rendre exécutable
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+# Copier le schéma Prisma
+COPY prisma ./prisma
+
+# Copier le reste du code source
+COPY . .
+
+EXPOSE 3001
+
+# Utiliser le script d'entrée qui génère Prisma puis lance start:dev
+ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["npm", "run", "start:dev"]
+

@@ -1,0 +1,173 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+
+  @@map("roles")
+}
+
+model User {
+  id                    String      @id @default(uuid())
+  username              String      @unique
+  email                 String      @unique
+  password              String
+  firstName             String?
+  lastName              String?
+  companyId             String?
+  company               Company?    @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  roleId                String
+  role                  Role        @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  status                UserStatus  @default(PENDING)
+  phone                 String?
+  usageDescription      String?     @db.Text
+  activationToken       String?
+  activationTokenExpires DateTime?  @db.Timestamp
+  lastLogin             DateTime?   @db.Timestamp
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  @@map("users")
+}
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?  @db.Text
+  address     String?
+  phone       String?
+  email       String?
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       User[]
+  contracts   Contract[]
+  applications Application[]
+
+  @@map("companies")
+}
+
+model Contract {
+  id          String   @id @default(uuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  startDate   DateTime
+  endDate     DateTime
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contracts")
+}
+
+model Application {
+  id          String   @id @default(uuid())
+  name        String
+  description String?  @db.Text
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  devices     Device[]
+
+  @@map("applications")
+}
+
+model Gateway {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  macAddress  String   @unique
+  ipAddress   String?
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  status      String   @default("offline")
+  uptime      Float    @default(0)
+  latency     Int      @default(0)
+  packetCount Int      @default(0)
+  errorCount  Int      @default(0)
+  lastSeen    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  frames      Frame[]
+
+  @@map("gateways")
+}
+
+model Device {
+  id            String       @id @default(uuid())
+  name          String
+  devEui        String       @unique
+  applicationId String
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  deviceType    String?
+  status        String       @default("offline")
+  lastSeen      DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  frames        Frame[]
+
+  @@map("devices")
+}
+
+model Frame {
+  id          String   @id @default(uuid())
+  deviceId    String
+  device      Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  gatewayId   String?
+  gateway     Gateway? @relation(fields: [gatewayId], references: [id], onDelete: SetNull)
+  type        String   // 'uplink' or 'downlink'
+  payload     String
+  rssi        Int?
+  snr         Float?
+  size        Int
+  timestamp   DateTime @default(now())
+
+  @@map("frames")
+}
+
+model ApiKey {
+  id          String   @id @default(uuid())
+  name        String
+  key         String   @unique
+  userId      String?
+  status      String   @default("active")
+  lastUsed    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("api_keys")
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
