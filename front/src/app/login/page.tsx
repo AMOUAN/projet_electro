@@ -19,14 +19,34 @@ export default function LoginPage() {
   useEffect(() => {
     // Afficher un message de succès si l'utilisateur vient de l'activation
     if (searchParams?.get('activated') === 'true') {
+      setError(null); // Effacer les erreurs précédentes
       setSuccess('Votre compte a été activé avec succès ! Vous pouvez maintenant vous connecter.');
     }
   }, [searchParams]);
 
+  // Timeout automatique pour les messages d'erreur (7 secondes)
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
+  // Timeout automatique pour les messages de succès (7 secondes)
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
+    // Ne pas effacer les messages immédiatement - ils seront remplacés par de nouveaux messages si nécessaire
     setIsLoading(true);
     
     try {
@@ -38,6 +58,9 @@ export default function LoginPage() {
       router.push('/dashboard');
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Erreur de connexion';
+      
+      // Effacer le message de succès si une erreur survient
+      setSuccess(null);
       
       // Messages d'erreur personnalisés
       if (error.response?.status === 401) {
@@ -167,7 +190,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900"
                   placeholder="votre@email.com"
                 />
               </div>
@@ -190,7 +213,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900"
                   placeholder="••••••••"
                 />
                 <button

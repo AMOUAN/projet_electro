@@ -151,7 +151,7 @@ export default function RequestAccessPage() {
                   required
                   value={formData.firstName}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 ${
                     fieldErrors.firstName ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Jean"
@@ -171,7 +171,7 @@ export default function RequestAccessPage() {
                   required
                   value={formData.lastName}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 ${
                     fieldErrors.lastName ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Dupont"
@@ -194,7 +194,7 @@ export default function RequestAccessPage() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 ${
                   fieldErrors.email ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="jean.dupont@example.com"
@@ -215,7 +215,7 @@ export default function RequestAccessPage() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
                 placeholder="+33 6 12 34 56 78"
               />
             </div>
@@ -232,7 +232,7 @@ export default function RequestAccessPage() {
                 required
                 value={formData.company}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 ${
                   fieldErrors.company ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Nom de votre entreprise"
@@ -255,7 +255,7 @@ export default function RequestAccessPage() {
                 minLength={10}
                 value={formData.usageDescription}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none text-gray-900 ${
                   fieldErrors.usageDescription ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Décrivez votre projet ou vos besoins (minimum 10 caractères)..."
