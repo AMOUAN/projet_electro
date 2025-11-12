@@ -89,6 +89,37 @@ async function main() {
       },
     });
 
+    console.log('Utilisateur admin créé');
+  //seed  user
+  const user = await prisma.user.create({
+    data: {
+      username: 'user',
+      email: 'user@example.com',
+      password: hashedPassword,
+      firstName: 'User',
+      lastName: 'System',
+      roleId: createdRoles.USER,
+      status: UserStatus.ACTIVE,
+    },
+  });
+
+  console.log('Utilisateur user créé');
+
+  //super admin
+  const superAdmin = await prisma.user.create({
+    data: {
+      username: 'superadmin',
+      email: 'superadmin@example.com',
+      password: hashedPassword,
+      firstName: 'Super Admin',
+      lastName: 'System',
+      roleId: createdRoles.SUPER_ADMIN,
+      status: UserStatus.ACTIVE,
+    },
+  });
+
+  console.log('Utilisateur super admin créé');
+
     
   }
 

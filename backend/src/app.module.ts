@@ -13,6 +13,7 @@ import { NetworkModule } from './feature/network/network.module';
 import { RolesModule } from './feature/roles/roles.module';
 import { ApiKeysModule } from './feature/api-keys/api-keys.module';
 import { SettingsModule } from './feature/settings/settings.module';
+import { NotificationsModule } from './feature/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { SettingsModule } from './feature/settings/settings.module';
     RolesModule,
     ApiKeysModule,
     SettingsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

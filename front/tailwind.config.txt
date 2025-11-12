@@ -1,0 +1,38 @@
+// Ajoutez ces couleurs dans votre tailwind.config.js
+
+colors: {
+  primary: {
+    50: '#E6F5FF',
+    100: '#CCE9FF',
+    200: '#99D4FF',
+    300: '#66BEFF',
+    400: '#33A8FF',
+    500: '#0688F9', // Couleur principale
+    600: '#0563C1',
+    700: '#04508F',
+    800: '#033D6D',
+    900: '#022A4B',
+  }
+}
+
+// Ajoutez ces animations
+animation: {
+  'fade-in': 'fadeIn 0.6s ease-out',
+  'slide-up': 'slideUp 0.6s ease-out',
+  'float': 'float 3s ease-in-out infinite',
+}
+
+keyframes: {
+  fadeIn: {
+    '0%': { opacity: '0', transform: 'translateY(10px)' },
+    '100%': { opacity: '1', transform: 'translateY(0)' },
+  },
+  slideUp: {
+    '0%': { opacity: '0', transform: 'translateY(30px)' },
+    '100%': { opacity: '1', transform: 'translateY(0)' },
+  },
+  float: {
+    '0%, 100%': { transform: 'translateY(0px)' },
+    '50%': { transform: 'translateY(-20px)' },
+  },
+}

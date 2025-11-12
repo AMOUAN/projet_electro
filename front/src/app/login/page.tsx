@@ -3,8 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api/client';
-import ErrorMessage from '@/components/ErrorMessage';
-import SuccessMessage from '@/components/SuccessMessage';
+import Modal from '@/components/Modal';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +16,9 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const currentHour = new Date().getHours();
+  const backgroundImageUrl = currentHour < 18 ? '/assets/jour.avif' : '/assets/fin.jpg';
+
   useEffect(() => {
     // Afficher un message de succès si l'utilisateur vient de l'activation
     if (searchParams?.get('activated') === 'true') {
@@ -24,25 +27,26 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  // Timeout automatique pour les messages d'erreur (7 secondes)
+  // Fermer automatiquement les modaux après 30 secondes
   useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (error || success) {
+      timer = setTimeout(() => {
         setError(null);
-      }, 7000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
-
-  // Timeout automatique pour les messages de succès (7 secondes)
-  useEffect(() => {
-    if (success) {
-      const timer = setTimeout(() => {
         setSuccess(null);
-      }, 7000);
-      return () => clearTimeout(timer);
+      }, 30000); // 30 secondes
     }
-  }, [success]);
+    
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [error, success]);
+
+  const closeModal = () => {
+    setError(null);
+    setSuccess(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,12 +59,18 @@ export default function LoginPage() {
       if (response.user) {
         localStorage.setItem('user', JSON.stringify(response.user));
       }
-      router.push('/dashboard');
+      console.log(response.user);
+      //en fonction du role de l'utilisateur, on redirige vers la page correspondante
+      if (response.user.role.name === 'SUPER_ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error: any) {
       const errorMessage = error.response?.data?.message || error.message || 'Erreur de connexion';
       
       // Effacer le message de succès si une erreur survient
-      setSuccess(null);
+      // setSuccess(null);
       
       // Messages d'erreur personnalisés
       if (error.response?.status === 401) {
@@ -84,35 +94,33 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Image Section - 3/4 de l'écran */}
-      <div className="hidden lg:flex lg:w-3/4 relative overflow-hidden bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600">
+      <div className="hidden lg:flex lg:w-3/4 relative overflow-hidden bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500">
         {/* Image de fond avec overlay */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            // Vous pouvez remplacer cette URL par une image locale : '/images/login-bg.jpg'
-            // ou utiliser le gradient de fond si aucune image n'est disponible
-            backgroundImage: 'url(https://images.unsplash.com/photo-1558494949-ef010cbdcc31?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2000&q=80)',
+            backgroundImage: `url(${backgroundImageUrl})`,
           }}
         >
           {/* Overlay avec gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/90 via-purple-600/80 to-pink-600/70"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/90 via-indigo-500/80 to-purple-500/70"></div>
         </div>
         
         {/* Contenu sur l'image */}
         <div className="relative z-10 flex flex-col justify-center items-start p-16 text-white">
           <div className="max-w-2xl animate-fade-in">
             <div className="flex items-center space-x-3 mb-8">
-              <div className="h-12 w-12 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
                 </svg>
               </div>
-              <h1 className="text-3xl font-bold">LoRaWAN</h1>
+              <h1 className="text-3xl font-bold">LoRaWAN Platform</h1>
             </div>
             
             <h2 className="text-5xl font-bold mb-6 leading-tight">
               Gérez votre réseau IoT
-              <span className="block text-4xl mt-2 text-indigo-200">
+              <span className="block text-4xl mt-2 text-blue-200">
                 avec simplicité
               </span>
             </h2>
@@ -146,7 +154,7 @@ export default function LoginPage() {
           
           {/* Éléments décoratifs */}
           <div className="absolute top-20 right-20 w-64 h-64 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-20 left-20 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl animate-float"></div>
         </div>
       </div>
 
@@ -155,8 +163,12 @@ export default function LoginPage() {
         <div className="w-full max-w-md mx-auto">
           {/* Logo pour mobile */}
           <div className="lg:hidden flex items-center justify-center space-x-2 mb-8">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600"></div>
-            <span className="text-2xl font-bold text-gray-900">LoRaWAN</span>
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+              </svg>
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">LoRaWAN Platform</span>
           </div>
 
           <div className="mb-8">
@@ -169,11 +181,21 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Messages d'erreur et de succès */}
-            {error && <ErrorMessage message={error} onClose={() => setError(null)} />}
-            {success && <SuccessMessage message={success} onClose={() => setSuccess(null)} />}
-            
-            {/* Email */}
+            {/* Messages d'erreur et de succès dans des modaux */}
+            {error && (
+              <div className="flex flex-col items-center text-center">
+                <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
+                <p className="text-gray-700">{error}</p>
+              </div>
+            )}
+            {success && (
+              <div className="flex flex-col items-center text-center">
+                <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
+                <p className="text-gray-700">{success}</p>
+              </div>
+            )}
+           
+    
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                 Adresse email
@@ -190,7 +212,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 text-gray-900"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-gray-900 hover:border-gray-400"
                   placeholder="votre@email.com"
                 />
               </div>
@@ -244,12 +266,13 @@ export default function LoginPage() {
                 />
                 <span className="ml-2 text-sm text-gray-600">Se souvenir de moi</span>
               </label>
-              <a
-                href="#"
-                className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+              <button
+                type="button"
+                onClick={() => router.push('/auth/forgot-password')}
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors duration-200 hover:underline"
               >
                 Mot de passe oublié ?
-              </a>
+              </button>
             </div>
 
             {/* Bouton de connexion */}

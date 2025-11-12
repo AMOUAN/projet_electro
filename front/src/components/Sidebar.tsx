@@ -31,17 +31,9 @@ export default function Sidebar({ userRole = 'user' }: SidebarProps) {
   const isActive = (href: string) => {
     return pathname === href || pathname?.startsWith(href + '/');
   };
+  
 
-  const navigation: NavItem[] = [
-    {
-      name: 'Tableau de bord',
-      href: '/dashboard',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      ),
-    },
+  const clientNavigation: NavItem[] = [
     {
       name: 'Sandbox',
       href: '/sandbox',
@@ -51,6 +43,21 @@ export default function Sidebar({ userRole = 'user' }: SidebarProps) {
         </svg>
       ),
     },
+  ];
+ 
+
+
+  const navigation: NavItem[] = [
+    {
+      name: 'Tableau de bord',
+      href: userRole === 'super-admin' ? '/dashboard_super_admin' : '/dashboard',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+      ),
+    },
+   
   ];
 
   const adminNavigation: NavItem[] = [
@@ -215,7 +222,11 @@ export default function Sidebar({ userRole = 'user' }: SidebarProps) {
     },
   ];
 
-  const allNavigation = [...navigation, ...(userRole === 'admin' || userRole === 'super-admin' ? adminNavigation : [])];
+  const allNavigation = [
+    ...navigation,
+    ...(userRole === 'user' ? clientNavigation : []),
+    ...(userRole === 'admin' || userRole === 'super-admin' ? adminNavigation : [])
+  ];
 
   const renderNavItem = (item: NavItem, level = 0) => {
     const hasChildren = item.children && item.children.length > 0;

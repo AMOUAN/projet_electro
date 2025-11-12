@@ -5,17 +5,23 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { User, UserStatus, Role } from '@prisma/client';
+import { User, UserStatus, Role, NotificationType } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { RequestAccessDto } from './dto/request-access.dto';
 import { ActivateAccountDto } from './dto/activate-account.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 import { v4 as uuidv4 } from 'uuid';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async create(createUserDto: CreateUserDto): Promise<Omit<User, 'password'>> {
     // Vérifier si l'utilisateur existe déjà
@@ -93,7 +99,7 @@ export class UsersService {
     });
 
     // Retirer le mot de passe de la réponse
-    const { password, ...userWithoutPassword } = user;
+    const { password: _password, ...userWithoutPassword } = user;
     return userWithoutPassword as Omit<User, 'password'>;
   }
 
@@ -123,15 +129,21 @@ export class UsersService {
     return userWithoutPassword as Omit<User, 'password'> & { role: Role };
   }
 
-  async findByUsername(username: string): Promise<User | null> {
+  async findByUsername(username: string): Promise<(User & { role: Role }) | null> {
     return this.prisma.user.findUnique({
       where: { username },
+      include: {
+        role: true,
+      },
     });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string): Promise<(User & { role: Role }) | null> {
     return this.prisma.user.findFirst({
       where: { email },
+      include: {
+        role: true,
+      },
     });
   }
 
@@ -214,6 +226,18 @@ export class UsersService {
       );
     }
 
+    // Vérifier si le mot de passe et la confirmation sont identiques
+    if (requestAccessDto.password !== requestAccessDto.confirmPassword) {
+      throw new BadRequestException('Les mots de passe ne correspondent pas');
+    }
+
+    const {
+      company: companyName,
+      password: plainPassword,
+      confirmPassword: _confirmPassword,
+      ...userData
+    } = requestAccessDto;
+
     // Récupérer le rôle USER par défaut
     const defaultRole = await this.prisma.role.findFirst({
       where: { name: 'USER' },
@@ -223,7 +247,7 @@ export class UsersService {
     }
 
     // Générer un nom d'utilisateur basé sur l'email
-    const username = requestAccessDto.email.split('@')[0] + '_' + Date.now();
+    const username = userData.email;
 
     // Créer un token d'activation
     const activationToken = uuidv4();
@@ -231,27 +255,24 @@ export class UsersService {
     activationTokenExpires.setHours(activationTokenExpires.getHours() + 48); // 48 heures
 
     // Générer un mot de passe temporaire (sera changé lors de l'activation)
-    const tempPassword = uuidv4();
+
     const salt = await bcrypt.genSalt(10);
-    const hashedTempPassword = await bcrypt.hash(tempPassword, salt);
+    const hashedTempPassword = await bcrypt.hash(plainPassword, salt);
 
     // Gérer la company
     let company = await this.prisma.company.findUnique({
-      where: { name: requestAccessDto.company },
+      where: { name: companyName },
     });
     
     if (!company) {
       // Créer la company si elle n'existe pas
       company = await this.prisma.company.create({
-        data: { name: requestAccessDto.company },
+        data: { name: companyName },
       });
     }
-
-    const { company: _, ...requestDataWithoutCompany } = requestAccessDto;
-
     const user = await this.prisma.user.create({
       data: {
-        ...requestDataWithoutCompany,
+        ...userData,
         username,
         password: hashedTempPassword,
         role: {
@@ -268,6 +289,13 @@ export class UsersService {
         role: true,
       },
     });
+
+    // Créer une notification pour tous les super administrateurs
+    await this.notificationsService.createForSuperAdmins(
+      NotificationType.ACCOUNT_PENDING,
+      'Nouvelle demande de compte',
+      `${user.firstName} ${user.lastName} (${user.email}) de l'entreprise ${companyName} a demandé un accès à la plateforme.`,
+    );
 
     // TODO: Envoyer un email avec le lien d'activation
     // Pour l'instant, on retourne juste l'utilisateur créé
@@ -330,6 +358,98 @@ export class UsersService {
 
   async validatePassword(user: User, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.password);
+  }
+
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+    const { email } = forgotPasswordDto;
+
+    // Trouver l'utilisateur par email
+    const user = await this.findByEmail(email);
+    
+    if (!user) {
+      throw new NotFoundException('Aucun compte trouvé avec cette adresse email');
+    }
+
+    // Vérifier que le compte est actif
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new BadRequestException('Votre compte n\'est pas actif. Veuillez contacter un administrateur.');
+    }
+
+    // Générer un token de réinitialisation
+    const resetToken = uuidv4();
+    const resetTokenExpires = new Date();
+    resetTokenExpires.setHours(resetTokenExpires.getHours() + 1); // 1 heure
+
+    // Enregistrer le token dans la base de données
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        resetPasswordToken: resetToken,
+        resetPasswordTokenExpires: resetTokenExpires,
+      },
+    });
+
+    // TODO: Envoyer un email avec le lien de réinitialisation
+    // const resetLink = `${process.env.FRONTEND_URL}/auth/reset-password?token=${resetToken}`;
+    // await this.emailService.sendPasswordResetEmail(user.email, resetLink);
+
+    console.log(`Reset token for ${email}: ${resetToken}`);
+    console.log(`Reset link: ${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password?token=${resetToken}`);
+
+    return {
+      message: 'Un email de réinitialisation a été envoyé à votre adresse email',
+    };
+  }
+
+  async validateResetToken(token: string): Promise<{ valid: boolean }> {
+    const user = await this.prisma.user.findFirst({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Token de réinitialisation invalide');
+    }
+
+    if (user.resetPasswordTokenExpires && user.resetPasswordTokenExpires < new Date()) {
+      throw new BadRequestException('Le token de réinitialisation a expiré');
+    }
+
+    return { valid: true };
+  }
+
+  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    const { token, password } = resetPasswordDto;
+
+    // Trouver l'utilisateur avec le token
+    const user = await this.prisma.user.findFirst({
+      where: { resetPasswordToken: token },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Token de réinitialisation invalide');
+    }
+
+    if (user.resetPasswordTokenExpires && user.resetPasswordTokenExpires < new Date()) {
+      throw new BadRequestException('Le token de réinitialisation a expiré');
+    }
+
+    // Hasher le nouveau mot de passe
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Mettre à jour le mot de passe et supprimer le token
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordTokenExpires: null,
+      },
+    });
+
+    return {
+      message: 'Votre mot de passe a été réinitialisé avec succès',
+    };
   }
 }
 

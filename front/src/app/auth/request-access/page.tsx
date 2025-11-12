@@ -14,6 +14,8 @@ export default function RequestAccessPage() {
     company: '',
     phone: '',
     usageDescription: '',
+    password: '',
+    confirmPassword: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -49,7 +51,9 @@ export default function RequestAccessPage() {
         email: formData.email,
         company: formData.company,
         phone: formData.phone || undefined,
-        usageDescription: formData.usageDescription || 'Demande d\'accès à la plateforme LoRaWAN',
+        usageDescription: formData.usageDescription,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
       };
 
       await apiClient.requestAccess(requestData);
@@ -70,6 +74,10 @@ export default function RequestAccessPage() {
           setFieldErrors({ company: 'Le nom de l\'entreprise est requis' });
         } else if (message.includes('usageDescription') || message.includes('utilisation')) {
           setFieldErrors({ usageDescription: 'La description doit contenir au moins 10 caractères' });
+        } else if (message.includes('password') || message.includes('mot de passe')) {
+          setFieldErrors({ password: 'Le mot de passe est requis' });
+        } else if (message.includes('confirmPassword') || message.includes('confirmation du mot de passe')) {
+          setFieldErrors({ confirmPassword: 'La confirmation du mot de passe est requise' }); 
         } else {
           setError(message);
         }
@@ -242,6 +250,50 @@ export default function RequestAccessPage() {
               )}
             </div>
 
+              {/* password et confirm password */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Mot de passe <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 ${
+                  fieldErrors.password ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="********"
+              />
+              {fieldErrors.password && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.password}</p>
+              )}
+            </div>
+
+            {/* confirm password */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmation du mot de passe <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                required
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 ${
+                  fieldErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="********"
+              />
+              {fieldErrors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{fieldErrors.confirmPassword}</p>
+              )}
+            </div>
+
             {/* Description de l'utilisation */}
             <div>
               <label htmlFor="usageDescription" className="block text-sm font-medium text-gray-700 mb-2">
@@ -252,7 +304,7 @@ export default function RequestAccessPage() {
                 name="usageDescription"
                 rows={4}
                 required
-                minLength={10}
+              
                 value={formData.usageDescription}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none text-gray-900 ${

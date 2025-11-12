@@ -1,0 +1,36 @@
+services:
+  frontend:
+    build:
+      context: ./front
+      dockerfile: Dockerfile.dev
+    container_name: electro_frontend_dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    stdin_open: true
+    tty: true
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: electro_backend_dev
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-electro_dev}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy

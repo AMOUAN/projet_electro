@@ -33,7 +33,14 @@ export class RequestAccessDto {
 
   @ApiProperty({ example: 'I want to use LoRaWAN for IoT monitoring' })
   @IsString()
-  @MinLength(10)
   usageDescription: string;
+
+  @ApiProperty({ example: 'password123', minLength: 6 })
+  @IsString()
+  password: string;
+
+  @ApiProperty({ example: 'password123', minLength: 6 })
+  @IsString()
+  confirmPassword: string;
 }
 

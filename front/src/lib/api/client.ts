@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -26,14 +27,14 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        }
+        // if (error.response?.status === 401) {
+        //   localStorage.removeItem('token');
+        //   window.location.href = '/login';
+        // }
         // Log détaillé pour le débogage
         if (error.response?.status === 404) {
-          console.error(`Endpoint not found: ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
-          console.error('Make sure the backend is running and the endpoint exists');
+          // console.error(`Endpoint not found: ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+          // console.error('Make sure the backend is running and the endpoint exists');
         }
         return Promise.reject(error);
       }
@@ -147,6 +148,20 @@ class ApiClient {
     return data;
   }
 
+  async deleteUser(id: string) {
+    await this.client.delete(`/users/${id}`);
+  }
+
+  async activateUser(id: string) {
+    const { data } = await this.client.patch(`/users/${id}/activate`);
+    return data;
+  }
+
+  async deactivateUser(id: string) {
+    const { data } = await this.client.patch(`/users/${id}/deactivate`);
+    return data;
+  }
+
   // Network
   async getNetworkHealth() {
     const { data } = await this.client.get('/network/health');
@@ -239,6 +254,70 @@ class ApiClient {
       return data;
     } catch (error: any) {
       console.error('Error activating account:', error);
+      throw error;
+    }
+  }
+
+  // Notifications
+  async getNotifications() {
+    const { data } = await this.client.get('/notifications');
+    return data;
+  }
+
+  async getUnreadNotifications() {
+    const { data } = await this.client.get('/notifications/unread');
+    return data;
+  }
+
+  async getUnreadNotificationsCount() {
+    const { data } = await this.client.get('/notifications/unread/count');
+    return data.count;
+  }
+
+  async markNotificationAsRead(id: string) {
+    const { data } = await this.client.patch(`/notifications/${id}/read`);
+    return data;
+  }
+
+  async markAllNotificationsAsRead() {
+    const { data } = await this.client.patch('/notifications/read-all');
+    return data;
+  }
+
+  async deleteNotification(id: string) {
+    await this.client.delete(`/notifications/${id}`);
+  }
+
+  // Password Reset
+  async forgotPassword(email: string) {
+    try {
+      const { data } = await this.client.post('/auth/forgot-password', { email });
+      return data;
+    } catch (error: any) {
+      console.error('Error sending forgot password email:', error);
+      throw error;
+    }
+  }
+
+  async validateResetToken(token: string) {
+    try {
+      const { data } = await this.client.get(`/auth/validate-reset-token/${token}`);
+      return data;
+    } catch (error: any) {
+      console.error('Error validating reset token:', error);
+      throw error;
+    }
+  }
+
+  async resetPassword({ token, password }: { token: string; password: string }) {
+    try {
+      const { data } = await this.client.post('/auth/reset-password', {
+        token,
+        password,
+      });
+      return data;
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
       throw error;
     }
   }
